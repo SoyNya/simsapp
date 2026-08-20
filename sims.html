@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sims — Familias y árboles genealógicos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --warm-white:#FBF7F1;
+    --ivory:#ECEADC;
+    --cream:#E6ECE5;
+    --linen:#E2E2CE;
+    --beige-arena:#F7E0C9;
+    --walnut:#7A5C45;
+    --walnut-deep:#5B4534;
+    --sage:#EC96A3;
+    --sage-deep:#BB7B82;
+    --olive:#8A8467;
+    --terracotta:#EEB47C;
+    --rose:#B5BE91;
+    --ink:#4B3E32;
+    --ink-soft:#6B6153;
+    --app-bg:#EEF4E9;
+
+    --sage-pale:#E5EBDF;
+    --blue-basil:#C8DCD5;
+    --blue-basil-deep:#9CA79F;
+    --blue-basil-soft:#D8E4DE;
+    --radish-pale:#F6DADA;
+    --carrot-deep:#B98E64;
+    --garden-leaf-deep:#919573;
+
+    --serif: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+
+    --r-lg: 24px;
+    --r-md: 20px;
+    --r-sm: 14px;
+
+    --shadow-soft: 0 1px 2px rgba(78,59,44,0.04), 0 8px 24px -8px rgba(78,59,44,0.10);
+    --shadow-lift: 0 4px 10px rgba(78,59,44,0.06), 0 20px 40px -12px rgba(78,59,44,0.18);
+
+    --ease: cubic-bezier(.4,0,.2,1);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--app-bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  a{color:inherit; text-decoration:none;}
+  button{ font-family:inherit; cursor:pointer; background:none; border:none; padding:0; color:inherit; }
+  input, select, textarea{ font-family:inherit; }
+  h1,h2,h3,p{ margin:0; }
+
+  @keyframes fadein{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .sims-app-header{
+    max-width:1100px; margin:0 auto; padding:36px 24px 0;
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  }
+  .sims-app-header h1{ font-family:var(--serif); font-size:26px; font-weight:500; color:var(--walnut-deep); }
+  .sims-app-header p{ font-family:var(--serif); font-style:italic; font-size:13px; color:var(--ink-soft); margin-top:4px; }
+  main{ max-width:1100px; margin:0 auto; padding:24px; }
+
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:20px;
+    justify-content:space-between;
+    flex-wrap:wrap;
+  }
+  .postit-icon-btn{
+    width:22px; height:22px; border-radius:7px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    color:var(--walnut-deep); opacity:0.55; transition:opacity .2s var(--ease), background .2s var(--ease);
+  }
+  .tb-btn{
+    position:relative; display:flex; align-items:center; gap:7px; flex-shrink:0;
+    padding:8px 15px; border-radius:20px; background:var(--warm-white);
+    border:1px solid var(--beige-arena); font-size:12.3px; font-weight:500;
+    color:var(--walnut); transition:border-color .25s var(--ease), color .25s var(--ease); white-space:nowrap;
+  }
+  .tb-btn-add{
+    background:var(--beige-arena); color:var(--walnut-deep); margin-left:auto;
+    border-color:var(--beige-arena);
+  }
+  .view-tabs{ display:flex; gap:4px; background:var(--ivory); padding:4px; border-radius:14px; width:fit-content; }
+  .view-tab{
+    padding:8px 16px; border-radius:11px; font-size:12.6px; font-weight:500;
+    color:var(--ink-soft); transition:background .25s var(--ease), color .25s var(--ease);
+  }
+  .btn-primary{
+    display:inline-flex; align-items:center; gap:7px;
+    background:var(--rose); color:var(--warm-white);
+    padding:10px 16px; border-radius:14px; font-size:12.6px; font-weight:500;
+    border:1px solid transparent;
+    transition:background .25s var(--ease);
+  }
+  .btn-ghost{
+    display:inline-flex; align-items:center; gap:6px;
+    background:transparent; color:var(--walnut-deep);
+    padding:10px 18px; border-radius:14px; font-size:13px; font-weight:500;
+    border:1px solid var(--beige-arena);
+    transition:border-color .25s var(--ease), color .25s var(--ease);
+  }
+  .btn-danger{
+    display:inline-flex; align-items:center; gap:6px;
+    background:transparent; color:var(--sage-deep); font-size:12.6px; font-weight:500;
+    padding:9px 16px; border-radius:14px;
+    border:1px solid var(--sage);
+    transition:background .25s var(--ease), border-color .25s var(--ease), color .25s var(--ease);
+  }
+  .form-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:13px 16px; margin-bottom:4px;
+  }
+  .form-field{ display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .form-label{
+    font-size:10.2px; letter-spacing:0.05em; text-transform:uppercase;
+    color:var(--olive); font-weight:600;
+  }
+  .memory-empty{ font-size:12.5px; color:var(--ink-soft); font-style:italic; font-family:var(--serif); }
+  .memory-empty-art{ display:flex; flex-direction:row; align-items:center; text-align:left; gap:14px; padding:18px 10px; justify-content:center; grid-column:1/-1; }
+  .memory-empty-art-icon{ width:38px; height:38px; color:var(--sage-deep); opacity:0.65; flex-shrink:0; }
+  .memory-empty-art .memory-empty{ margin:0; max-width:420px; }
+  .memory-empty-art-sm{ padding:6px 4px; gap:10px; }
+  .memory-empty-art-sm .memory-empty-art-icon{ width:24px; height:24px; }
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(62,54,44,0.45); backdrop-filter:blur(2px);
+    display:flex; align-items:center; justify-content:center; padding:24px; z-index:200;
+    animation:fadein .3s var(--ease);
+  }
+  .modal-card{
+    background:var(--warm-white); border-radius:26px; max-width:760px; width:100%;
+    max-height:88vh; overflow-y:auto; overflow-x:hidden; box-shadow:var(--shadow-lift); position:relative;
+    animation:modalIn .35s var(--ease);
+  }
+  @keyframes modalIn{ from{opacity:0; transform:translateY(12px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);} }
+  .confirm-overlay{ z-index:600; }
+  .confirm-card{ max-width:380px; padding:28px; box-sizing:border-box; }
+  .confirm-message{ font-size:14px; color:var(--ink); line-height:1.5; margin:0 0 20px; }
+  #confirm-ok-btn.confirm-danger-btn{ background:var(--terracotta); }
+  #confirm-ok-btn.confirm-danger-btn:hover{ background:var(--sage-deep); }
+  .modal-close{
+    position:absolute; top:18px; right:18px; width:34px; height:34px; border-radius:50%;
+    background:transparent; display:flex; align-items:center; justify-content:center;
+    color:var(--walnut-deep); z-index:5; border:1px solid var(--beige-arena);
+    transition:border-color .25s var(--ease), color .25s var(--ease);
+  }
+  .modal-close:hover{ border-color:var(--sage); color:var(--sage-deep); }
+  .modal-close svg{ width:16px; height:16px; }
+  .modal-info{ flex:1; min-width:0; }
+  .modal-status{
+    display:inline-flex; align-items:center; gap:5px; font-size:10.3px; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--sage-deep); font-weight:600; margin-bottom:10px;
+  }
+  .modal-status::before{ content:""; width:5px; height:5px; border-radius:50%; background:var(--sage-deep); }
+  .modal-title{ font-family:var(--serif); font-size:25px; font-weight:500; color:var(--sage); margin:0 0 4px; line-height:1.2; }
+  .link-btn{ font-size:12px; color:var(--terracotta); font-weight:600; }
+
+  /* ---- Sims ---- */
+  .sims-families-grid{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:18px; }
+  .sims-family-card{
+    background:var(--warm-white); border-radius:var(--r-lg); padding:16px; box-shadow:var(--shadow-soft);
+    cursor:pointer; transition:transform .3s var(--ease), box-shadow .3s var(--ease);
+  }
+  .sims-family-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-lift); }
+  .sims-family-cover{
+    aspect-ratio:4/3; border-radius:12px; background:var(--linen); overflow:hidden; margin-bottom:10px;
+    display:flex; align-items:center; justify-content:center; font-size:32px;
+  }
+  .sims-family-cover img{ width:100%; height:100%; object-fit:cover; }
+  .sims-family-name{ font-family:var(--serif); font-size:14.5px; font-weight:600; color:var(--walnut-deep); }
+  .sims-family-meta{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; }
+
+  #sims-tree-container{ position:relative; }
+  .sims-tree-scroll{ overflow-x:auto; padding:20px 40px 12px; position:relative; display:flex; flex-direction:column; align-items:center; min-width:100%; box-sizing:border-box; }
+  .sims-gen-row{ display:flex; flex-direction:column; align-items:center; margin-bottom:56px; min-width:max-content; }
+  .sims-gen-label{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--sage-deep); font-weight:600; margin-bottom:16px;
+  }
+  .sims-gen-nodes{ display:flex; gap:40px; flex-wrap:nowrap; justify-content:center; }
+  .sims-node{ display:flex; flex-direction:column; align-items:center; gap:8px; width:96px; cursor:pointer; position:relative; z-index:2; flex-shrink:0; }
+  .sims-node-portrait{
+    width:84px; height:84px; border-radius:50%; background:var(--linen); box-shadow:var(--shadow-soft);
+    display:flex; align-items:center; justify-content:center; font-family:var(--serif); font-size:17px; font-weight:600; color:var(--walnut-deep);
+    position:relative; overflow:hidden; border:3px solid var(--warm-white); transition:transform .2s var(--ease);
+  }
+  .sims-node:hover .sims-node-portrait{ transform:scale(1.06); }
+  .sims-node-portrait img{ width:100%; height:100%; object-fit:cover; }
+  .sims-node-pet .sims-node-portrait{ width:56px; height:56px; align-self:flex-end; }
+  .sims-node-dead .sims-node-portrait{ filter:grayscale(0.75); opacity:0.75; }
+  .sims-node-pet-badge, .sims-node-dead-badge{
+    position:absolute; bottom:-2px; right:-2px; width:24px; height:24px; border-radius:50%; background:var(--warm-white);
+    display:flex; align-items:center; justify-content:center; box-shadow:0 1px 3px rgba(0,0,0,0.15); color:var(--sage-deep);
+  }
+  .sims-node-dead-badge{ color:var(--terracotta); }
+  .sims-node-pet-badge svg, .sims-node-dead-badge svg{ width:13px; height:13px; }
+  .sims-node-name{ font-size:12px; text-align:center; color:var(--ink); line-height:1.25; }
+  .sims-tree-lines{ position:absolute; top:0; left:0; pointer-events:none; z-index:1; }
+  .sims-line{ stroke-width:1.6; }
+  .sims-line-amor{ stroke:#D98A94; }
+  .sims-line-familia{ stroke:var(--sage-deep); }
+  .sims-line-hermano{ stroke:var(--blue-basil-deep, #7C97AE); stroke-dasharray:3 3; }
+  .sims-line-mascota{ stroke:var(--carrot-deep, #C98A4B); stroke-dasharray:2 2; }
+
+  .sims-picker{ position:relative; }
+  .sims-picker-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+  .sims-picker-chip{
+    display:inline-flex; align-items:center; gap:5px; background:var(--beige-arena); color:var(--walnut-deep);
+    font-size:11.5px; font-weight:600; padding:4px 6px 4px 10px; border-radius:16px;
+  }
+  .sims-picker-chip button{ width:14px; height:14px; display:flex; align-items:center; justify-content:center; opacity:0.7; }
+  .sims-picker-chip button svg{ width:9px; height:9px; }
+  .sims-picker-input{
+    width:100%; box-sizing:border-box; background:var(--ivory); border:none; border-radius:10px;
+    padding:9px 12px; font-family:var(--sans); font-size:13px; color:var(--ink); outline:none;
+  }
+  .sims-picker-dropdown{
+    position:absolute; top:100%; left:0; right:0; margin-top:4px; background:var(--warm-white); border-radius:10px;
+    box-shadow:var(--shadow-lift); max-height:180px; overflow-y:auto; z-index:20;
+  }
+  .sims-picker-option{ padding:8px 12px; font-size:12.5px; color:var(--ink); cursor:pointer; }
+  .sims-picker-option:hover{ background:var(--linen); }
+  .sims-picker-option.selected{ background:var(--beige-arena); color:var(--walnut-deep); font-weight:600; }
+
+  .sims-info-list{ display:flex; flex-direction:column; gap:2px; }
+  .sims-info-row{ display:flex; justify-content:space-between; align-items:center; gap:14px; padding:8px 0; border-bottom:1px dashed var(--beige-arena); }
+  .sims-info-row:last-child{ border-bottom:none; }
+  .sims-info-label{ font-size:11.5px; color:var(--ink-soft); flex-shrink:0; }
+  .sims-info-value{ font-size:13px; color:var(--walnut-deep); font-weight:500; text-align:right; }
+  .sims-chip{
+    display:inline-block; background:var(--linen); color:var(--ink); font-size:11px; font-weight:600;
+    padding:3px 9px; border-radius:12px; margin:2px 0 2px 5px;
+  }
+
+  .sims-rel-section{ margin-bottom:14px; }
+  .sims-rel-section-title{ font-family:var(--serif); font-size:12.5px; font-weight:600; color:var(--sage-deep); margin-bottom:6px; }
+  .sims-rel-row{ display:flex; align-items:center; gap:10px; padding:7px 4px; cursor:pointer; border-radius:8px; transition:background .2s var(--ease); }
+  .sims-rel-row:hover{ background:var(--linen); }
+
+  .sims-memories-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+  .sims-memory-card{ cursor:pointer; }
+  .sims-memory-cover{
+    aspect-ratio:1; border-radius:12px; background:var(--linen); overflow:hidden; margin-bottom:6px;
+    display:flex; align-items:center; justify-content:center; color:var(--ink-soft);
+  }
+  .sims-memory-cover img{ width:100%; height:100%; object-fit:cover; }
+  .sims-memory-cover svg{ width:22px; height:22px; }
+  .sims-memory-title{ font-size:11.5px; color:var(--ink); text-align:center; }
+  .sims-memory-images{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .sims-memory-img-thumb{ position:relative; width:64px; height:64px; border-radius:10px; overflow:hidden; }
+  .sims-memory-img-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .sims-memory-img-thumb button{
+    position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.5);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+  }
+  .sims-memory-img-thumb button svg{ width:9px; height:9px; }
+  .sims-memory-detail-images{ display:flex; gap:8px; overflow-x:auto; }
+  .sims-memory-detail-images img{ height:180px; border-radius:12px; flex-shrink:0; }
+
+</style>
+</head>
+<body>
+
+  <div class="sims-app-header">
+    <div>
+      <h1>🌳 Sims</h1>
+      <p>Familias y árboles genealógicos de tus partidas</p>
+    </div>
+  </div>
+
+  <main>
+    <div id="sims-families-view">
+      <section>
+        <div class="section-head">
+          <h2>Familias</h2>
+          <button type="button" class="tb-btn tb-btn-add" id="sims-family-add-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Nueva familia
+          </button>
+        </div>
+        <div class="sims-families-grid" id="sims-families-grid"></div>
+      </section>
+    </div>
+
+    <div id="sims-tree-view" hidden>
+      <section>
+        <div class="section-head">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button type="button" class="link-btn" id="sims-back-btn">← Familias</button>
+            <h2 id="sims-family-title" style="margin:0;"></h2>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="tb-btn" id="sims-memories-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="14" rx="2"/><path d="M3.5 15l4.5-4.5 3 3 4-4 5.5 5.5"/><circle cx="8" cy="8.5" r="1.3"/></svg>
+              Recuerdos
+            </button>
+            <button type="button" class="tb-btn tb-btn-add" id="sims-sim-add-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              Sim
+            </button>
+          </div>
+        </div>
+        <div id="sims-tree-container"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="modal-root"></div>
+
+<script>
+
+  // confirmación propia de la app (nunca el confirm() feo del navegador)
+  function showConfirmModal(message, opts){
+    opts = opts || {};
+    const confirmLabel = opts.confirmLabel || 'Eliminar';
+    const cancelLabel = opts.cancelLabel || 'Cancelar';
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay confirm-overlay';
+      overlay.innerHTML = `
+        <div class="modal-card confirm-card">
+          <p class="confirm-message">${message}</p>
+          <div class="modal-actions">
+            <span></span>
+            <div class="modal-actions-right">
+              <button type="button" class="btn-ghost" id="confirm-cancel-btn">${cancelLabel}</button>
+              <button type="button" class="btn-primary confirm-danger-btn" id="confirm-ok-btn">${confirmLabel}</button>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      function cleanup(result){
+        overlay.remove();
+        document.removeEventListener('keydown', onKey);
+        resolve(result);
+      }
+      function onKey(e){ if (e.key === 'Escape') cleanup(false); }
+      overlay.querySelector('#confirm-cancel-btn').addEventListener('click', () => cleanup(false));
+      overlay.querySelector('#confirm-ok-btn').addEventListener('click', () => cleanup(true));
+      overlay.addEventListener('click', e => { if (e.target === overlay) cleanup(false); });
+      document.addEventListener('keydown', onKey);
+      overlay.querySelector('#confirm-ok-btn').focus();
+    });
+  }
+
+  // ============================================================
+  // Sims — familias y árboles genealógicos
+  // ============================================================
+  (function(){
+
+        // ---- RELLENA ESTO con las credenciales de tu proyecto Supabase nuevo ----
+        // (Ajustes del proyecto → API, en supabase.com)
+        const SIMS_URL = 'https://TU-PROYECTO.supabase.co';
+        const SIMS_KEY = 'TU-CLAVE-PUBLICA-ANON';
+        let __simsClient = null;
+        function getSbClient(){
+          if (!__simsClient) __simsClient = window.supabase.createClient(SIMS_URL, SIMS_KEY);
+          return __simsClient;
+        }
+        const simsUid = () => 'sm' + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+
+        const ICONS = {
+          close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+          plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+          trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>',
+          edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+          paw: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="15" r="4"/><circle cx="6" cy="9" r="2"/><circle cx="18" cy="9" r="2"/><circle cx="9" cy="5.5" r="1.8"/><circle cx="15" cy="5.5" r="1.8"/></svg>',
+          skull: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3C7 3 4 6.5 4 11c0 2.6 1.2 4.3 2.5 5.5V19a1 1 0 0 0 1 1h2v-2h1v2h3v-2h1v2h2a1 1 0 0 0 1-1v-2.5C18.8 15.3 20 13.6 20 11c0-4.5-3-8-8-8Z"/><circle cx="9" cy="11" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1.3" fill="currentColor" stroke="none"/></svg>',
+          heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-10-9.4C.4 7.6 2.3 4 6 4c2 0 3.6 1.1 4.5 2.6C11.3 5.1 13 4 15 4c3.7 0 5.6 3.6 4 7.1-2.5 4.8-10 9.4-10 9.4Z"/></svg>',
+          gallery: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="14" rx="2"/><path d="M3.5 15l4.5-4.5 3 3 4-4 5.5 5.5"/><circle cx="8" cy="8.5" r="1.3"/></svg>',
+          camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.4"/></svg>'
+        };
+
+        // ---------- datos precargados (placeholder, Sonia mandará la lista definitiva más adelante) ----------
+        const WORLDS = ['Willow Creek','Oasis Springs','Newcrest','Windenburg','San Myshuno','Del Sol Valley','Britechester','Glimmerbrook','Sulani','Strangerville','Evergreen Harbor','Monte Komorebi','Copperdale','Ciudad Enamorada','Henford-on-Bagley','Tartosa'];
+        const OCCULT_TYPES = ['Vampiro','Hada','Sirena','Alien','Bruja','Hombre lobo','Espectro'];
+        const DEATH_TYPES = ['Vejez','Fuego','Ahogamiento','Electrocución','Inanición','Congelación','Insolación','Setas venenosas','Picadura de aguijón asesino','Risa','Fallo científico','Poción de amor obsesivo','Sobredosis de la fuente de la juventud','Rayo','Planta carnívora','Fruta prohibida','Consumido por el más allá'];
+        const TRAITS = ['Ambicioso/a','Creativo/a','Genio','Bondadoso/a','Egoísta','Perfeccionista','Coqueto/a','Odioso/a','Torpe','Amante de la naturaleza','Amante de los animales','Glotón/a','Materialista','Activo/a','Solitario/a','Muy familiar','Insensible','Valiente','Nervioso/a','Alegre','Ermitaño/a','Chismoso/a','Disciplinado/a','Excéntrico/a','Ostentoso/a'];
+        const ASPIRATIONS = ['Genio malvado','Autor/a best-seller','Extremadamente rico/a','Gurú del amor','Máster culinario','Coleccionista','Bebé de la familia','Gran explorador de la fama','Atleta','Renacentista','Cazafantasmas','Curador/a sobrenatural'];
+        const SKILLS = ['Cocina','Repostería','Programación','Pesca','Jardinería','Pintura','Escritura','Guitarra','Piano','Violín','Fitness','Lógica','Manitas','Carisma','Videojuegos','Comedia','Mixología','Preparación de pociones','Cuidado de mascotas','Investigación y depuración'];
+        const CAREERS = ['Detective','Científico/a','Criminal','Autónomo/a','Cocinero/a culinario','Médico/a','Educación','Negocios','Entretenimiento','Atletismo','Militar','Ingeniería civil','Crimen organizado','Estilismo'];
+
+        // ---------- registro de tipos de relación (bilateral: cada tipo sabe cuál es su inverso) ----------
+        // inverso: string simple (mismo tipo en ambos sentidos) o {m,f,n} según el género del OTRO sim
+        const REL_TYPES = {
+          // amorosas
+          pareja: { label:'Pareja', category:'amor', inverse:'pareja', genOffset:0 },
+          conyuge: { label:'Cónyuge', category:'amor', inverse:'conyuge', genOffset:0 },
+          expareja: { label:'Expareja', category:'amor', inverse:'expareja', genOffset:0 },
+          divorciado: { label:'Divorciado/a', category:'amor', inverse:'divorciado', genOffset:0 },
+          // familiares — ascendientes
+          madre: { label:'Madre', category:'familia', inverse:{m:'hijo',f:'hija',n:'hijo_a'}, genOffset:1 },
+          padre: { label:'Padre', category:'familia', inverse:{m:'hijo',f:'hija',n:'hijo_a'}, genOffset:1 },
+          madre_adoptiva: { label:'Madre adoptiva', category:'familia', inverse:{m:'hijo_adoptivo',f:'hija_adoptiva',n:'hijo_a_adoptivo'}, genOffset:1 },
+          padre_adoptivo: { label:'Padre adoptivo', category:'familia', inverse:{m:'hijo_adoptivo',f:'hija_adoptiva',n:'hijo_a_adoptivo'}, genOffset:1 },
+          madrastra: { label:'Madrastra', category:'familia', inverse:{m:'hijastro',f:'hijastra',n:'hijastro_a'}, genOffset:1 },
+          padrastro: { label:'Padrastro', category:'familia', inverse:{m:'hijastro',f:'hijastra',n:'hijastro_a'}, genOffset:1 },
+          abuela: { label:'Abuela', category:'familia', inverse:{m:'nieto',f:'nieta',n:'nieto_a'}, genOffset:2 },
+          abuelo: { label:'Abuelo', category:'familia', inverse:{m:'nieto',f:'nieta',n:'nieto_a'}, genOffset:2 },
+          bisabuela: { label:'Bisabuela', category:'familia', inverse:{m:'bisnieto',f:'bisnieta',n:'bisnieto_a'}, genOffset:3 },
+          bisabuelo: { label:'Bisabuelo', category:'familia', inverse:{m:'bisnieto',f:'bisnieta',n:'bisnieto_a'}, genOffset:3 },
+          tatarabuela: { label:'Tatarabuela', category:'familia', inverse:{m:'tataranieto',f:'tataranieta',n:'tataranieto_a'}, genOffset:4 },
+          tatarabuelo: { label:'Tatarabuelo', category:'familia', inverse:{m:'tataranieto',f:'tataranieta',n:'tataranieto_a'}, genOffset:4 },
+          // familiares — descendientes
+          hijo: { label:'Hijo', category:'familia', inverse:{m:'padre',f:'madre',n:'padre_madre'}, genOffset:-1 },
+          hija: { label:'Hija', category:'familia', inverse:{m:'padre',f:'madre',n:'padre_madre'}, genOffset:-1 },
+          hijo_adoptivo: { label:'Hijo adoptivo', category:'familia', inverse:{m:'padre_adoptivo',f:'madre_adoptiva',n:'padre_adoptivo_a'}, genOffset:-1 },
+          hija_adoptiva: { label:'Hija adoptiva', category:'familia', inverse:{m:'padre_adoptivo',f:'madre_adoptiva',n:'padre_adoptivo_a'}, genOffset:-1 },
+          hijastro: { label:'Hijastro', category:'familia', inverse:{m:'padrastro',f:'madrastra',n:'padrastro_a'}, genOffset:-1 },
+          hijastra: { label:'Hijastra', category:'familia', inverse:{m:'padrastro',f:'madrastra',n:'padrastro_a'}, genOffset:-1 },
+          nieto: { label:'Nieto', category:'familia', inverse:{m:'abuelo',f:'abuela',n:'abuelo_a'}, genOffset:-2 },
+          nieta: { label:'Nieta', category:'familia', inverse:{m:'abuelo',f:'abuela',n:'abuelo_a'}, genOffset:-2 },
+          bisnieto: { label:'Bisnieto', category:'familia', inverse:{m:'bisabuelo',f:'bisabuela',n:'bisabuelo_a'}, genOffset:-3 },
+          bisnieta: { label:'Bisnieta', category:'familia', inverse:{m:'bisabuelo',f:'bisabuela',n:'bisabuelo_a'}, genOffset:-3 },
+          tataranieto: { label:'Tataranieto', category:'familia', inverse:{m:'tatarabuelo',f:'tatarabuela',n:'tatarabuelo_a'}, genOffset:-4 },
+          tataranieta: { label:'Tataranieta', category:'familia', inverse:{m:'tatarabuelo',f:'tatarabuela',n:'tatarabuelo_a'}, genOffset:-4 },
+          // hermanos
+          hermano: { label:'Hermano', category:'familia', inverse:{m:'hermano',f:'hermana',n:'hermano_a'}, genOffset:0 },
+          hermana: { label:'Hermana', category:'familia', inverse:{m:'hermano',f:'hermana',n:'hermano_a'}, genOffset:0 },
+          medio_hermano: { label:'Medio hermano', category:'familia', inverse:{m:'medio_hermano',f:'media_hermana',n:'medio_hermano_a'}, genOffset:0 },
+          media_hermana: { label:'Media hermana', category:'familia', inverse:{m:'medio_hermano',f:'media_hermana',n:'medio_hermano_a'}, genOffset:0 },
+          hermanastro: { label:'Hermanastro', category:'familia', inverse:{m:'hermanastro',f:'hermanastra',n:'hermanastro_a'}, genOffset:0 },
+          hermanastra: { label:'Hermanastra', category:'familia', inverse:{m:'hermanastro',f:'hermanastra',n:'hermanastro_a'}, genOffset:0 },
+          // familia política
+          suegro: { label:'Suegro', category:'familia', inverse:{m:'yerno',f:'nuera',n:'yerno_nuera'}, genOffset:1 },
+          suegra: { label:'Suegra', category:'familia', inverse:{m:'yerno',f:'nuera',n:'yerno_nuera'}, genOffset:1 },
+          yerno: { label:'Yerno', category:'familia', inverse:{m:'suegro',f:'suegra',n:'suegro_a'}, genOffset:-1 },
+          nuera: { label:'Nuera', category:'familia', inverse:{m:'suegro',f:'suegra',n:'suegro_a'}, genOffset:-1 },
+          cunado: { label:'Cuñado', category:'familia', inverse:{m:'cunado',f:'cunada',n:'cunado_a'}, genOffset:0 },
+          cunada: { label:'Cuñada', category:'familia', inverse:{m:'cunado',f:'cunada',n:'cunado_a'}, genOffset:0 },
+          abuelo_politico: { label:'Abuelo político', category:'familia', inverse:{m:'nieto_politico',f:'nieta_politica',n:'nieto_a_politico_a'}, genOffset:2 },
+          abuela_politica: { label:'Abuela política', category:'familia', inverse:{m:'nieto_politico',f:'nieta_politica',n:'nieto_a_politico_a'}, genOffset:2 },
+          nieto_politico: { label:'Nieto político', category:'familia', inverse:{m:'abuelo_politico',f:'abuela_politica',n:'abuelo_a_politico_a'}, genOffset:-2 },
+          nieta_politica: { label:'Nieta política', category:'familia', inverse:{m:'abuelo_politico',f:'abuela_politica',n:'abuelo_a_politico_a'}, genOffset:-2 },
+          // sociales
+          amigo: { label:'Amigo', category:'social', inverse:{m:'amigo',f:'amiga',n:'amigo_a'}, genOffset:0 },
+          amiga: { label:'Amiga', category:'social', inverse:{m:'amigo',f:'amiga',n:'amigo_a'}, genOffset:0 },
+          mejor_amigo: { label:'Mejor amigo', category:'social', inverse:{m:'mejor_amigo',f:'mejor_amiga',n:'mejor_amigo_a'}, genOffset:0 },
+          mejor_amiga: { label:'Mejor amiga', category:'social', inverse:{m:'mejor_amigo',f:'mejor_amiga',n:'mejor_amigo_a'}, genOffset:0 },
+          enemigo: { label:'Enemigo', category:'social', inverse:{m:'enemigo',f:'enemiga',n:'enemigo_a'}, genOffset:0 },
+          enemiga: { label:'Enemiga', category:'social', inverse:{m:'enemigo',f:'enemiga',n:'enemigo_a'}, genOffset:0 },
+          // mascotas
+          dueno_de: { label:'Dueño/a de', category:'mascota', inverse:'mascota_de', genOffset:0 },
+          mascota_de: { label:'Mascota de', category:'mascota', inverse:'dueno_de', genOffset:0 }
+        };
+        const REL_CATEGORY_LABELS = { amor:'❤️ Relaciones amorosas', familia:'🧬 Relaciones familiares', social:'👥 Relaciones sociales', mascota:'🐾 Relaciones con mascotas' };
+        // pares [masculino, femenino] del mismo concepto — en el selector solo se muestra el que coincide
+        // con el género del Sim cuya ficha está abierta (su género ya se conoce, no hace falta preguntarlo)
+        const GENDERED_PAIRS = [
+          ['padre','madre'], ['padre_adoptivo','madre_adoptiva'], ['padrastro','madrastra'],
+          ['abuelo','abuela'], ['bisabuelo','bisabuela'], ['tatarabuelo','tatarabuela'],
+          ['hijo','hija'], ['hijo_adoptivo','hija_adoptiva'], ['hijastro','hijastra'],
+          ['nieto','nieta'], ['bisnieto','bisnieta'], ['tataranieto','tataranieta'],
+          ['hermano','hermana'], ['medio_hermano','media_hermana'], ['hermanastro','hermanastra'],
+          ['suegro','suegra'], ['yerno','nuera'], ['cunado','cunada'],
+          ['abuelo_politico','abuela_politica'], ['nieto_politico','nieta_politica'],
+          ['amigo','amiga'], ['mejor_amigo','mejor_amiga'], ['enemigo','enemiga']
+        ];
+        const GENDER_OF_TYPE = {};
+        GENDERED_PAIRS.forEach(([mKey,fKey]) => { GENDER_OF_TYPE[mKey] = 'm'; GENDER_OF_TYPE[fKey] = 'f'; });
+        // devuelve las entradas de REL_TYPES a mostrar en el selector para un Sim de género "gender"
+        function relTypeOptionsFor(gender){
+          return Object.entries(REL_TYPES).filter(([key]) => {
+            const g = GENDER_OF_TYPE[key];
+            if (!g) return true; // tipo sin variante de género (pareja, cónyuge, mascota…)
+            if (gender === 'm') return g === 'm';
+            if (gender === 'f') return g === 'f';
+            return g === 'm'; // Sim no binario/sin género especificado: se usa la forma masculina por defecto
+          });
+        }
+        function relLabelFor(type, gender){
+          const def = REL_TYPES[type];
+          if (!def) return type;
+          return def.label;
+        }
+        function inverseRelType(type, otherGender){
+          const def = REL_TYPES[type];
+          if (!def) return type;
+          if (typeof def.inverse === 'string') return def.inverse;
+          if (otherGender === 'm') return def.inverse.m;
+          if (otherGender === 'f') return def.inverse.f;
+          return def.inverse.n;
+        }
+
+        // ---------- datos ----------
+        let FAMILIES = [], SIMSDATA = [], RELATIONSHIPS = [], MEMORIES = [];
+        async function loadAll(){
+          try{
+            const client = getSbClient();
+            const [famRes, simRes, relRes, memRes] = await Promise.all([
+              client.from('sims_families').select('id, data'),
+              client.from('sims_sims').select('id, data'),
+              client.from('sims_relationships').select('id, data'),
+              client.from('sims_memories').select('id, data')
+            ]);
+            FAMILIES = famRes.data ? famRes.data.map(r => r.data) : [];
+            SIMSDATA = simRes.data ? simRes.data.map(r => r.data) : [];
+            RELATIONSHIPS = relRes.data ? relRes.data.map(r => r.data) : [];
+            MEMORIES = memRes.data ? memRes.data.map(r => r.data) : [];
+          }catch(e){ /* sin conexión */ }
+        }
+        function saveFamily(f){ getSbClient().from('sims_families').upsert({ id:f.id, data:f }).then(()=>{}); }
+        function deleteFamilyRemote(id){ getSbClient().from('sims_families').delete().eq('id', id).then(()=>{}); }
+        function saveSim(s){ getSbClient().from('sims_sims').upsert({ id:s.id, data:s }).then(()=>{}); }
+        function deleteSimRemote(id){ getSbClient().from('sims_sims').delete().eq('id', id).then(()=>{}); }
+        function saveRelationship(r){ getSbClient().from('sims_relationships').upsert({ id:r.id, data:r }).then(()=>{}); }
+        function deleteRelationshipRemote(id){ getSbClient().from('sims_relationships').delete().eq('id', id).then(()=>{}); }
+        function saveMemory(m){ getSbClient().from('sims_memories').upsert({ id:m.id, data:m }).then(()=>{}); }
+        function deleteMemoryRemote(id){ getSbClient().from('sims_memories').delete().eq('id', id).then(()=>{}); }
+
+        function simsOf(familyId){ return SIMSDATA.filter(s => s.familyId === familyId); }
+        function findSim(id){ return SIMSDATA.find(s => s.id === id); }
+        function relsOf(simId){ return RELATIONSHIPS.filter(r => r.simA === simId || r.simB === simId); }
+        function otherSim(rel, simId){ return rel.simA === simId ? rel.simB : rel.simA; }
+        function typeFor(rel, simId){ return rel.simA === simId ? rel.type : inverseRelType(rel.type, findSim(rel.simA) ? findSim(rel.simA).gender : 'n'); }
+
+        // crea una relación bilateral: guarda un único registro con simA/simB/type (perspectiva de simA)
+        function addRelationshipBilateral(simAId, simBId, type){
+          const rel = { id: simsUid(), simA:simAId, simB:simBId, type, status:null, createdAt: Date.now() };
+          RELATIONSHIPS.push(rel);
+          saveRelationship(rel);
+          return rel;
+        }
+
+        // ---------- generaciones: BFS por desplazamientos de generación de cada tipo de relación ----------
+        function computeGenerations(familyId){
+          const sims = simsOf(familyId);
+          const gen = new Map();
+          if (!sims.length) return gen;
+          sims.forEach(s => gen.set(s.id, null));
+          gen.set(sims[0].id, 0);
+          let changed = true;
+          let guard = 0;
+          while (changed && guard < 40){
+            changed = false; guard++;
+            sims.forEach(s => {
+              if (gen.get(s.id) === null) return;
+              relsOf(s.id).forEach(r => {
+                const otherId = otherSim(r, s.id);
+                if (!sims.some(x => x.id === otherId)) return; // solo dentro de la misma familia
+                const type = typeFor(r, s.id);
+                const def = REL_TYPES[type];
+                if (!def) return;
+                const target = gen.get(s.id) + def.genOffset;
+                if (gen.get(otherId) === null || gen.get(otherId) === undefined){
+                  gen.set(otherId, target);
+                  changed = true;
+                }
+              });
+            });
+          }
+          // sims sin ninguna relación calculada quedan en 0
+          sims.forEach(s => { if (gen.get(s.id) === null || gen.get(s.id) === undefined) gen.set(s.id, 0); });
+          // normaliza para que el mínimo sea 0
+          const min = Math.min(...Array.from(gen.values()));
+          sims.forEach(s => gen.set(s.id, gen.get(s.id) - min));
+          return gen;
+        }
+
+        // ---------- relaciones derivadas (calculadas, no almacenadas): abuelos, tíos, primos, sobrinos ----------
+        function directRelType(simId, otherId){
+          const rel = RELATIONSHIPS.find(r => (r.simA===simId&&r.simB===otherId) || (r.simA===otherId&&r.simB===simId));
+          if (!rel) return null;
+          return typeFor(rel, simId);
+        }
+        function relatedByConcept(simId, concepts){
+          // devuelve ids de sims relacionados con simId por alguno de los tipos indicados
+          const out = [];
+          relsOf(simId).forEach(r => {
+            const type = typeFor(r, simId);
+            if (concepts.includes(type)) out.push(otherSim(r, simId));
+          });
+          return out;
+        }
+        const PARENT_TYPES = ['madre','padre','madre_adoptiva','padre_adoptivo'];
+        const CHILD_TYPES = ['hijo','hija','hijo_adoptivo','hija_adoptiva'];
+        const SIBLING_TYPES = ['hermano','hermana','medio_hermano','media_hermana','hermanastro','hermanastra'];
+        const SPOUSE_TYPES = ['conyuge','pareja'];
+        function computeDerivedRelationships(simId){
+          const derived = []; // { simId, label }
+          const seen = new Set([simId]);
+          function addDerived(id, label){ if (seen.has(id)) return; if (derived.some(d => d.simId === id)) return; derived.push({ simId:id, label }); }
+          function ancestorsUp(startIds, levels){
+            // sube "levels" generaciones de padres a partir de un conjunto de ids, devuelve el conjunto final
+            let current = startIds;
+            for (let i = 0; i < levels; i++){
+              const next = [];
+              current.forEach(id => relatedByConcept(id, PARENT_TYPES).forEach(p => next.push(p)));
+              current = next;
+            }
+            return current;
+          }
+          function descendantsDown(startIds, levels){
+            let current = startIds;
+            for (let i = 0; i < levels; i++){
+              const next = [];
+              current.forEach(id => relatedByConcept(id, CHILD_TYPES).forEach(c => next.push(c)));
+              current = next;
+            }
+            return current;
+          }
+
+          const parents = relatedByConcept(simId, PARENT_TYPES);
+          const children = relatedByConcept(simId, CHILD_TYPES);
+          const siblings = relatedByConcept(simId, SIBLING_TYPES);
+          const spouses = relatedByConcept(simId, SPOUSE_TYPES);
+
+          // abuelos / bisabuelos / tatarabuelos = ancestros a 2, 3 y 4 generaciones
+          ancestorsUp([simId], 2).forEach(gId => { if (directRelType(simId, gId)) return; const g = findSim(gId); addDerived(gId, g && g.gender === 'm' ? 'Abuelo (calculado)' : 'Abuela (calculado)'); });
+          ancestorsUp([simId], 3).forEach(gId => { if (directRelType(simId, gId)) return; const g = findSim(gId); addDerived(gId, g && g.gender === 'm' ? 'Bisabuelo (calculado)' : 'Bisabuela (calculado)'); });
+          ancestorsUp([simId], 4).forEach(gId => { if (directRelType(simId, gId)) return; const g = findSim(gId); addDerived(gId, g && g.gender === 'm' ? 'Tatarabuelo (calculado)' : 'Tatarabuela (calculado)'); });
+          // nietos / bisnietos / tataranietos
+          descendantsDown([simId], 2).forEach(gId => { if (directRelType(simId, gId)) return; const g = findSim(gId); addDerived(gId, g && g.gender === 'm' ? 'Nieto (calculado)' : 'Nieta (calculado)'); });
+          descendantsDown([simId], 3).forEach(gId => { if (directRelType(simId, gId)) return; const g = findSim(gId); addDerived(gId, g && g.gender === 'm' ? 'Bisnieto (calculado)' : 'Bisnieta (calculado)'); });
+          descendantsDown([simId], 4).forEach(gId => { if (directRelType(simId, gId)) return; const g = findSim(gId); addDerived(gId, g && g.gender === 'm' ? 'Tataranieto (calculado)' : 'Tataranieta (calculado)'); });
+          // tíos/tías = hermanos de mis padres
+          parents.forEach(pId => {
+            relatedByConcept(pId, SIBLING_TYPES).forEach(uId => {
+              if (directRelType(simId, uId)) return;
+              const u = findSim(uId);
+              addDerived(uId, u && u.gender === 'm' ? 'Tío (calculado)' : 'Tía (calculado)');
+            });
+          });
+          // sobrinos/as = hijos de mis hermanos
+          siblings.forEach(sibId => {
+            relatedByConcept(sibId, CHILD_TYPES).forEach(nId => {
+              if (directRelType(simId, nId)) return;
+              const n = findSim(nId);
+              addDerived(nId, n && n.gender === 'm' ? 'Sobrino (calculado)' : 'Sobrina (calculado)');
+            });
+          });
+          // primos/as = hijos de mis tíos (= hijos de hermanos de mis padres)
+          parents.forEach(pId => {
+            relatedByConcept(pId, SIBLING_TYPES).forEach(uId => {
+              relatedByConcept(uId, CHILD_TYPES).forEach(cId => {
+                if (directRelType(simId, cId)) return;
+                addDerived(cId, 'Primo/a (calculado)');
+              });
+            });
+          });
+          // ---- familia política ----
+          // suegros = padres de mi cónyuge/pareja
+          spouses.forEach(spId => {
+            relatedByConcept(spId, PARENT_TYPES).forEach(sgId => {
+              if (directRelType(simId, sgId)) return;
+              const sg = findSim(sgId);
+              addDerived(sgId, sg && sg.gender === 'm' ? 'Suegro (calculado)' : 'Suegra (calculado)');
+            });
+            // abuelos políticos = abuelos de mi cónyuge/pareja
+            ancestorsUp([spId], 2).forEach(gId => {
+              if (directRelType(simId, gId)) return;
+              const g = findSim(gId);
+              addDerived(gId, g && g.gender === 'm' ? 'Abuelo político (calculado)' : 'Abuela política (calculado)');
+            });
+          });
+          // yerno/nuera = cónyuges/parejas de mis hijos
+          children.forEach(cId => {
+            relatedByConcept(cId, SPOUSE_TYPES).forEach(ynId => {
+              if (directRelType(simId, ynId)) return;
+              const yn = findSim(ynId);
+              addDerived(ynId, yn && yn.gender === 'm' ? 'Yerno (calculado)' : 'Nuera (calculado)');
+            });
+          });
+          // nietos políticos = cónyuges/parejas de mis nietos
+          descendantsDown([simId], 2).forEach(gcId => {
+            relatedByConcept(gcId, SPOUSE_TYPES).forEach(npId => {
+              if (directRelType(simId, npId)) return;
+              const np = findSim(npId);
+              addDerived(npId, np && np.gender === 'm' ? 'Nieto político (calculado)' : 'Nieta política (calculado)');
+            });
+          });
+          // cuñados/as = hermanos de mi cónyuge/pareja, y también cónyuges/parejas de mis hermanos
+          spouses.forEach(spId => {
+            relatedByConcept(spId, SIBLING_TYPES).forEach(cuId => {
+              if (directRelType(simId, cuId)) return;
+              const cu = findSim(cuId);
+              addDerived(cuId, cu && cu.gender === 'm' ? 'Cuñado (calculado)' : 'Cuñada (calculado)');
+            });
+          });
+          siblings.forEach(sibId => {
+            relatedByConcept(sibId, SPOUSE_TYPES).forEach(cuId => {
+              if (directRelType(simId, cuId)) return;
+              const cu = findSim(cuId);
+              addDerived(cuId, cu && cu.gender === 'm' ? 'Cuñado (calculado)' : 'Cuñada (calculado)');
+            });
+          });
+          return derived;
+        }
+
+        // ---------- utilidades comunes ----------
+        function emptyArtHtmlSims(msg){
+          return `<div class="memory-empty-art" style="grid-column:1/-1;">
+            <svg class="memory-empty-art-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="24" cy="14" r="6"/><path d="M12 40v-4a8 8 0 0 1 8-8h8a8 8 0 0 1 8 8v4"/>
+            </svg>
+            <p class="memory-empty">${msg}</p>
+          </div>`;
+        }
+        function fullName(s){ return [s.firstName, s.lastName].filter(Boolean).join(' ') || 'Sin nombre'; }
+        function initialsOf(s){ return ((s.firstName||'?')[0] + (s.lastName ? s.lastName[0] : '')).toUpperCase(); }
+
+        function switchView(view){
+          document.getElementById('sims-families-view').hidden = view !== 'families';
+          document.getElementById('sims-tree-view').hidden = view !== 'tree';
+        }
+
+        // ---------- vista: lista de familias ----------
+        function renderFamiliesView(){
+          const el = document.getElementById('sims-families-grid');
+          if (!FAMILIES.length){ el.innerHTML = emptyArtHtmlSims('Todavía no has creado ninguna familia. Pulsa "+ Nueva familia" para empezar tu primera dinastía.'); return; }
+          el.innerHTML = FAMILIES.map(f => {
+            const sims = simsOf(f.id);
+            const gens = computeGenerations(f.id);
+            const numGens = sims.length ? (Math.max(...Array.from(gens.values())) + 1) : 0;
+            return `
+              <div class="sims-family-card" data-family-id="${f.id}">
+                <div class="sims-family-cover">${f.image ? `<img src="${f.image}" alt="">` : `<span>🏡</span>`}</div>
+                <div class="sims-family-name">${f.name}</div>
+                <div class="sims-family-meta">${numGens} generación${numGens===1?'':'es'} · ${sims.length} miembro${sims.length===1?'':'s'}</div>
+              </div>`;
+          }).join('');
+          el.querySelectorAll('[data-family-id]').forEach(card => card.addEventListener('click', () => openFamily(card.dataset.familyId)));
+        }
+
+        function openFamilyFormModal(id){
+          const f = id ? FAMILIES.find(x => x.id === id) : null;
+          const root = document.getElementById('modal-root');
+          let imgData = f ? f.image : null;
+          root.innerHTML = `
+            <div class="modal-overlay" id="sims-fam-overlay">
+              <div class="modal-card" style="max-width:420px;">
+                <button class="modal-close" id="sims-fam-close" type="button">${ICONS.close}</button>
+                <div class="fin-modal-body">
+                  <h2 class="modal-title" style="margin-bottom:16px;">${f ? 'Editar familia' : 'Nueva familia'}</h2>
+                  <div class="modal-cover" id="sims-fam-cover" style="cursor:pointer; margin-bottom:16px;">
+                    ${imgData ? `<img class="loaded" src="${imgData}" alt="">` : `<span style="font-size:34px;">🏡</span>`}
+                  </div>
+                  <input type="file" id="sims-fam-file" accept="image/*" style="display:none;">
+                  <label class="form-field" style="margin-bottom:12px;">
+                    <span class="form-label">Nombre de la familia</span>
+                    <input type="text" id="sims-fam-name" value="${f ? f.name.replace(/"/g,'&quot;') : ''}" placeholder="Ej: Familia Villareal">
+                  </label>
+                  <label class="form-field" style="margin-bottom:16px;">
+                    <span class="form-label">Descripción (opcional)</span>
+                    <input type="text" id="sims-fam-desc" value="${f && f.description ? f.description.replace(/"/g,'&quot;') : ''}" placeholder="Opcional">
+                  </label>
+                  <div class="modal-actions">
+                    ${f ? `<button type="button" class="link-btn" id="sims-fam-del" style="color:var(--terracotta);">Eliminar familia</button>` : `<span></span>`}
+                    <button type="button" class="btn-primary" id="sims-fam-save">Guardar</button>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          const close = () => { root.innerHTML = ''; };
+          document.getElementById('sims-fam-close').addEventListener('click', close);
+          document.getElementById('sims-fam-overlay').addEventListener('click', e => { if (e.target.id === 'sims-fam-overlay') close(); });
+          document.getElementById('sims-fam-cover').addEventListener('click', () => document.getElementById('sims-fam-file').click());
+          document.getElementById('sims-fam-file').addEventListener('change', e => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxW = 700; const scale = Math.min(1, maxW/img.width);
+                canvas.width = img.width*scale; canvas.height = img.height*scale;
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                imgData = canvas.toDataURL('image/jpeg', 0.85);
+                document.getElementById('sims-fam-cover').innerHTML = `<img class="loaded" src="${imgData}" alt="">`;
+              };
+              img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+          });
+          document.getElementById('sims-fam-del')?.addEventListener('click', async () => {
+            if (!(await showConfirmModal(`¿Eliminar "${f.name}" y todos sus Sims, relaciones y recuerdos? Esta acción no se puede deshacer.`))) return;
+            const simIds = simsOf(f.id).map(s => s.id);
+            RELATIONSHIPS = RELATIONSHIPS.filter(r => { const kill = simIds.includes(r.simA) || simIds.includes(r.simB); if (kill) deleteRelationshipRemote(r.id); return !kill; });
+            MEMORIES = MEMORIES.filter(m => { const kill = m.familyId === f.id; if (kill) deleteMemoryRemote(m.id); return !kill; });
+            SIMSDATA = SIMSDATA.filter(s => { const kill = s.familyId === f.id; if (kill) deleteSimRemote(s.id); return !kill; });
+            FAMILIES = FAMILIES.filter(x => x.id !== f.id);
+            deleteFamilyRemote(f.id);
+            close();
+            renderFamiliesView();
+          });
+          document.getElementById('sims-fam-save').addEventListener('click', () => {
+            const name = document.getElementById('sims-fam-name').value.trim();
+            if (!name) return;
+            const desc = document.getElementById('sims-fam-desc').value.trim();
+            if (f){
+              f.name = name; f.description = desc; f.image = imgData;
+              saveFamily(f);
+            } else {
+              const nf = { id: simsUid(), name, description:desc, image:imgData, createdAt: Date.now() };
+              FAMILIES.push(nf);
+              saveFamily(nf);
+            }
+            close();
+            renderFamiliesView();
+          });
+        }
+
+        // ---------- vista: árbol genealógico ----------
+        let currentFamilyId = null;
+        function openFamily(id){
+          currentFamilyId = id;
+          const f = FAMILIES.find(x => x.id === id);
+          document.getElementById('sims-family-title').textContent = f ? f.name : '';
+          switchView('tree');
+          renderTree();
+        }
+
+        function simNodeHtml(s){
+          const isPet = s.type === 'mascota';
+          const isDead = s.condition === 'muerto';
+          return `
+            <div class="sims-node ${isPet ? 'sims-node-pet' : ''} ${isDead ? 'sims-node-dead' : ''}" data-sim-node="${s.id}" data-sim-id="${s.id}">
+              <div class="sims-node-portrait">
+                ${s.image ? `<img src="${s.image}" alt="">` : `<span>${initialsOf(s)}</span>`}
+                ${isPet ? `<span class="sims-node-pet-badge">${ICONS.paw}</span>` : ''}
+                ${isDead ? `<span class="sims-node-dead-badge">${ICONS.skull}</span>` : ''}
+              </div>
+              <div class="sims-node-name">${fullName(s)}</div>
+            </div>`;
+        }
+
+        const COUPLE_TYPES_FOR_SORT = SPOUSE_TYPES.concat(['expareja','divorciado']);
+        // agrupa a cada Sim justo al lado de su pareja (si está en la misma fila) para que el árbol se lea mejor
+        function sortRowByCouples(rowSims){
+          const ids = new Set(rowSims.map(s => s.id));
+          const visited = new Set();
+          const ordered = [];
+          rowSims.forEach(s => {
+            if (visited.has(s.id)) return;
+            ordered.push(s); visited.add(s.id);
+            relatedByConcept(s.id, COUPLE_TYPES_FOR_SORT).forEach(spId => {
+              if (ids.has(spId) && !visited.has(spId)){
+                const sp = rowSims.find(x => x.id === spId);
+                if (sp){ ordered.push(sp); visited.add(spId); }
+              }
+            });
+          });
+          return ordered;
+        }
+        // ordena una fila según la posición media de sus padres en la fila anterior, para que los hijos queden debajo de su unidad familiar
+        function sortRowByParents(rowSims, prevOrderIndex){
+          const withKey = rowSims.map(s => {
+            const parents = relatedByConcept(s.id, PARENT_TYPES).filter(pid => prevOrderIndex.has(pid));
+            const key = parents.length ? parents.reduce((a,pid) => a + prevOrderIndex.get(pid), 0) / parents.length : 999;
+            return { s, key };
+          });
+          withKey.sort((a,b) => a.key - b.key || (a.s.createdAt||0) - (b.s.createdAt||0));
+          return sortRowByCouples(withKey.map(x => x.s));
+        }
+
+        function renderTree(){
+          const container = document.getElementById('sims-tree-container');
+          const sims = simsOf(currentFamilyId);
+          if (!sims.length){
+            container.innerHTML = emptyArtHtmlSims('Añade el primer Sim de esta familia con el botón "+ Sim" de arriba.');
+            return;
+          }
+          const gens = computeGenerations(currentFamilyId);
+          const byGen = {};
+          sims.forEach(s => { const g = gens.get(s.id) ?? 0; (byGen[g] = byGen[g] || []).push(s); });
+          const genKeys = Object.keys(byGen).map(Number).sort((a,b) => a-b);
+
+          // ordena cada fila: la primera por parejas, las siguientes por la posición de sus padres en la fila anterior
+          let prevOrderIndex = new Map();
+          genKeys.forEach(g => {
+            byGen[g] = prevOrderIndex.size ? sortRowByParents(byGen[g], prevOrderIndex) : sortRowByCouples(byGen[g]);
+            const idx = new Map();
+            byGen[g].forEach((s,i) => idx.set(s.id, i));
+            prevOrderIndex = idx;
+          });
+
+          container.innerHTML = `
+            <div class="sims-tree-scroll" id="sims-tree-scroll">
+              ${genKeys.map((g, idx) => `
+                <div class="sims-gen-row" data-gen="${g}">
+                  <div class="sims-gen-label">Generación ${idx+1}</div>
+                  <div class="sims-gen-nodes">
+                    ${byGen[g].map(s => simNodeHtml(s)).join('')}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            <svg class="sims-tree-lines" id="sims-tree-lines"></svg>`;
+
+          container.querySelectorAll('[data-sim-node]').forEach(el => el.addEventListener('click', () => openSimCard(el.dataset.simId)));
+
+          requestAnimationFrame(() => drawTreeLines(sims));
+        }
+
+        const NODE_RADIUS = 42; // debe coincidir con la mitad de .sims-node-portrait (84px)
+        function relIconSvg(type, x, y){
+          let inner = '';
+          if (type === 'pareja') inner = `<path d="M0,4.5 C-3.5,1 -6,-2.5 -2.5,-5 C-1,-6.3 0,-4.8 0,-3.5 C0,-4.8 1,-6.3 2.5,-5 C6,-2.5 3.5,1 0,4.5 Z" fill="#D9838B"/>`;
+          else if (type === 'expareja') inner = `<path d="M0,4.5 C-3.5,1 -6,-2.5 -2.5,-5 C-1,-6.3 0,-4.8 0,-3.5 C0,-4.8 1,-6.3 2.5,-5 C6,-2.5 3.5,1 0,4.5 Z" fill="none" stroke="#D9838B" stroke-width="1.3"/>`;
+          else if (type === 'conyuge') inner = `<circle cx="-3" cy="0" r="4" fill="none" stroke="#B98A4A" stroke-width="1.6"/><circle cx="3" cy="0" r="4" fill="none" stroke="#B98A4A" stroke-width="1.6"/>`;
+          else if (type === 'divorciado') inner = `<circle cx="-5" cy="-2" r="4" fill="none" stroke="#B98A4A" stroke-width="1.6"/><circle cx="5" cy="2" r="4" fill="none" stroke="#B98A4A" stroke-width="1.6"/>`;
+          else return '';
+          return `<g transform="translate(${x},${y})"><circle r="10" fill="var(--warm-white)" stroke="var(--beige-arena)" stroke-width="1"/>${inner}</g>`;
+        }
+
+        function drawTreeLines(sims){
+          const scrollEl = document.getElementById('sims-tree-scroll');
+          const svg = document.getElementById('sims-tree-lines');
+          if (!scrollEl || !svg) return;
+          const scrollRect = scrollEl.getBoundingClientRect();
+          svg.setAttribute('width', scrollEl.scrollWidth);
+          svg.setAttribute('height', scrollEl.scrollHeight);
+          svg.style.width = scrollEl.scrollWidth + 'px';
+          svg.style.height = scrollEl.scrollHeight + 'px';
+
+          function centerOf(simId){
+            const nodeEl = scrollEl.querySelector(`[data-sim-node="${simId}"] .sims-node-portrait`);
+            if (!nodeEl) return null;
+            const r = nodeEl.getBoundingClientRect();
+            return { x: r.left - scrollRect.left + r.width/2 + scrollEl.scrollLeft, y: r.top - scrollRect.top + r.height/2 + scrollEl.scrollTop };
+          }
+
+          const familySimIds = new Set(sims.map(s => s.id));
+          let svgHtml = '';
+
+          // 1) líneas de pareja (con icono de relación en el punto medio)
+          const drawnCouple = new Set();
+          RELATIONSHIPS.forEach(rel => {
+            if (!familySimIds.has(rel.simA) || !familySimIds.has(rel.simB)) return;
+            const def = REL_TYPES[rel.type];
+            if (!def || def.category !== 'amor') return;
+            const key = [rel.simA, rel.simB].sort().join('|');
+            if (drawnCouple.has(key)) return; drawnCouple.add(key);
+            const p1 = centerOf(rel.simA), p2 = centerOf(rel.simB);
+            if (!p1 || !p2) return;
+            svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="sims-line sims-line-amor"/>`;
+            svgHtml += relIconSvg(rel.type, (p1.x+p2.x)/2, (p1.y+p2.y)/2);
+          });
+
+          // 2) mascotas: línea simple a su dueño/a
+          const drawnPet = new Set();
+          RELATIONSHIPS.forEach(rel => {
+            if (!familySimIds.has(rel.simA) || !familySimIds.has(rel.simB)) return;
+            const def = REL_TYPES[rel.type];
+            if (!def || def.category !== 'mascota') return;
+            const key = [rel.simA, rel.simB].sort().join('|');
+            if (drawnPet.has(key)) return; drawnPet.add(key);
+            const p1 = centerOf(rel.simA), p2 = centerOf(rel.simB);
+            if (p1 && p2) svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="sims-line sims-line-mascota"/>`;
+          });
+
+          // 3) conectores padres → hijos en ángulo recto, agrupados por el mismo conjunto de padres
+          const groups = new Map();
+          sims.forEach(s => {
+            const parents = relatedByConcept(s.id, PARENT_TYPES).filter(pid => familySimIds.has(pid));
+            if (!parents.length) return;
+            const key = parents.slice().sort().join(',');
+            if (!groups.has(key)) groups.set(key, { parents, children: [] });
+            groups.get(key).children.push(s.id);
+          });
+          groups.forEach(({ parents, children }) => {
+            const parentPoints = parents.map(centerOf).filter(Boolean);
+            const childPoints = children.map(centerOf).filter(Boolean);
+            if (!parentPoints.length || !childPoints.length) return;
+            const parentMidX = parentPoints.reduce((a,p) => a+p.x, 0) / parentPoints.length;
+            const parentY = Math.max(...parentPoints.map(p => p.y)) + NODE_RADIUS;
+            const childTopY = Math.min(...childPoints.map(p => p.y)) - NODE_RADIUS;
+            const busY = (parentY + childTopY) / 2;
+            const minX = Math.min(parentMidX, ...childPoints.map(p => p.x));
+            const maxX = Math.max(parentMidX, ...childPoints.map(p => p.x));
+            svgHtml += `<line x1="${parentMidX}" y1="${parentY}" x2="${parentMidX}" y2="${busY}" class="sims-line sims-line-familia"/>`;
+            svgHtml += `<line x1="${minX}" y1="${busY}" x2="${maxX}" y2="${busY}" class="sims-line sims-line-familia"/>`;
+            childPoints.forEach(cp => {
+              svgHtml += `<line x1="${cp.x}" y1="${busY}" x2="${cp.x}" y2="${cp.y - NODE_RADIUS}" class="sims-line sims-line-familia"/>`;
+            });
+          });
+
+          svg.innerHTML = svgHtml;
+        }
+
+        // ---------- selector con búsqueda (single/multi), reutilizable para mundo/criatura/rasgos/aspiración/habilidades/profesión ----------
+        function setupPicker(containerId, options, initialSelected, multi){
+          const root = document.getElementById(containerId);
+          if (!root) return { getSelected: () => [...initialSelected] };
+          let selected = [...initialSelected];
+          root.innerHTML = `
+            <div class="sims-picker">
+              <div class="sims-picker-chips" id="${containerId}-chips"></div>
+              <input type="text" class="sims-picker-input" id="${containerId}-input" placeholder="Escribe para buscar…">
+              <div class="sims-picker-dropdown" id="${containerId}-dropdown" hidden></div>
+            </div>`;
+          const chipsEl = document.getElementById(`${containerId}-chips`);
+          const inputEl = document.getElementById(`${containerId}-input`);
+          const dropEl = document.getElementById(`${containerId}-dropdown`);
+
+          function renderChips(){
+            chipsEl.innerHTML = selected.map(v => `<span class="sims-picker-chip">${v}<button type="button" data-remove="${v.replace(/"/g,'&quot;')}">${ICONS.close}</button></span>`).join('');
+            chipsEl.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', () => {
+              selected = selected.filter(v => v !== btn.dataset.remove);
+              renderChips();
+              renderDropdown(inputEl.value);
+            }));
+          }
+          function renderDropdown(filter){
+            const f = (filter||'').toLowerCase();
+            const matches = options.filter(o => o.toLowerCase().includes(f) && (multi || !selected.includes(o)));
+            if (!matches.length){ dropEl.hidden = true; return; }
+            dropEl.hidden = false;
+            dropEl.innerHTML = matches.slice(0,40).map(o => `<div class="sims-picker-option ${selected.includes(o) ? 'selected' : ''}" data-opt="${o.replace(/"/g,'&quot;')}">${o}</div>`).join('');
+            dropEl.querySelectorAll('[data-opt]').forEach(opt => opt.addEventListener('mousedown', e => {
+              e.preventDefault();
+              if (multi){
+                if (selected.includes(opt.dataset.opt)) selected = selected.filter(v => v !== opt.dataset.opt);
+                else selected.push(opt.dataset.opt);
+                renderChips();
+                renderDropdown(inputEl.value);
+                inputEl.focus();
+              } else {
+                selected = [opt.dataset.opt];
+                renderChips();
+                inputEl.value = '';
+                dropEl.hidden = true;
+              }
+            }));
+          }
+          inputEl.addEventListener('focus', () => renderDropdown(inputEl.value));
+          inputEl.addEventListener('input', () => renderDropdown(inputEl.value));
+          inputEl.addEventListener('blur', () => setTimeout(() => { dropEl.hidden = true; }, 150));
+          renderChips();
+          return { getSelected: () => [...selected] };
+        }
+
+        // ---------- modal: crear/editar Sim ----------
+        function openSimEditModal(id){
+          const s = id ? findSim(id) : null;
+          const root = document.getElementById('modal-root');
+          let imgData = s ? s.image : null;
+          root.innerHTML = `
+            <div class="modal-overlay" id="sims-edit-overlay">
+              <div class="modal-card" style="max-width:560px;">
+                <button class="modal-close" id="sims-edit-close" type="button">${ICONS.close}</button>
+                <div class="fin-modal-body">
+                  <h2 class="modal-title" style="margin-bottom:16px;">${s ? 'Editar Sim' : 'Nuevo Sim'}</h2>
+                  <div class="modal-cover" id="sims-edit-cover" style="cursor:pointer; margin-bottom:16px; border-radius:50%; width:90px; height:90px;">
+                    ${imgData ? `<img class="loaded" src="${imgData}" alt="">` : `<span style="font-size:28px;">${s ? initialsOf(s) : '?'}</span>`}
+                  </div>
+                  <input type="file" id="sims-edit-file" accept="image/*" style="display:none;">
+
+                  <div class="form-grid">
+                    <label class="form-field"><span class="form-label">Nombre</span><input type="text" id="sims-f-first" value="${s ? s.firstName.replace(/"/g,'&quot;') : ''}"></label>
+                    <label class="form-field"><span class="form-label">Apellido</span><input type="text" id="sims-f-last" value="${s && s.lastName ? s.lastName.replace(/"/g,'&quot;') : ''}"></label>
+                    <label class="form-field"><span class="form-label">Género</span>
+                      <select id="sims-f-gender">
+                        <option value="f" ${s && s.gender==='f'?'selected':''}>Femenino</option>
+                        <option value="m" ${s && s.gender==='m'?'selected':''}>Masculino</option>
+                        <option value="n" ${s && s.gender==='n'?'selected':''}>No binario</option>
+                      </select>
+                    </label>
+                    <label class="form-field"><span class="form-label">Tipo</span>
+                      <select id="sims-f-type">
+                        <option value="sim" ${!s || s.type==='sim'?'selected':''}>Sim</option>
+                        <option value="mascota" ${s && s.type==='mascota'?'selected':''}>Mascota</option>
+                      </select>
+                    </label>
+                    <label class="form-field"><span class="form-label">Condición</span>
+                      <select id="sims-f-condition">
+                        <option value="vivo" ${!s || s.condition==='vivo'?'selected':''}>Vivo/a</option>
+                        <option value="muerto" ${s && s.condition==='muerto'?'selected':''}>Muerto/a</option>
+                      </select>
+                    </label>
+                    <label class="form-field" id="sims-f-deathtype-wrap">
+                      <span class="form-label">Tipo de muerte</span>
+                      <select id="sims-f-deathtype" ${!s || s.condition!=='muerto' ? 'disabled' : ''}>
+                        <option value="">Sin especificar</option>
+                        ${DEATH_TYPES.map(d => `<option value="${d}" ${s && s.deathType===d?'selected':''}>${d}</option>`).join('')}
+                      </select>
+                    </label>
+                    <label class="form-field"><span class="form-label">Ubicación (mundo)</span>
+                      <select id="sims-f-world">
+                        <option value="">Sin especificar</option>
+                        ${WORLDS.map(w => `<option value="${w}" ${s && s.world===w?'selected':''}>${w}</option>`).join('')}
+                      </select>
+                    </label>
+                    <label class="form-field"><span class="form-label">Criatura sobrenatural</span>
+                      <select id="sims-f-occult">
+                        <option value="">Ninguna</option>
+                        ${OCCULT_TYPES.map(o => `<option value="${o}" ${s && s.occultType===o?'selected':''}>${o}</option>`).join('')}
+                      </select>
+                    </label>
+                    <label class="form-field"><span class="form-label">Aspiración</span>
+                      <select id="sims-f-aspiration">
+                        <option value="">Sin especificar</option>
+                        ${ASPIRATIONS.map(a => `<option value="${a}" ${s && s.aspirations && s.aspirations[0]===a?'selected':''}>${a}</option>`).join('')}
+                      </select>
+                    </label>
+                    <label class="form-field"><span class="form-label">Profesión</span>
+                      <select id="sims-f-career">
+                        <option value="">Sin especificar</option>
+                        ${CAREERS.map(c => `<option value="${c}" ${s && s.career===c?'selected':''}>${c}</option>`).join('')}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div class="form-field span-2" style="margin-top:10px;">
+                    <span class="form-label">Rasgos</span>
+                    <div id="sims-f-traits"></div>
+                  </div>
+                  <div class="form-field span-2" style="margin-top:14px;">
+                    <span class="form-label">Habilidades</span>
+                    <div id="sims-f-skills"></div>
+                  </div>
+                  <label class="form-field span-2" style="margin-top:14px;">
+                    <span class="form-label">Descripción / biografía</span>
+                    <textarea id="sims-f-desc" rows="3" style="width:100%; box-sizing:border-box; font-family:var(--sans); font-size:13px; padding:10px 12px; border-radius:10px; border:none; background:var(--ivory); resize:vertical;">${s && s.description ? s.description : ''}</textarea>
+                  </label>
+
+                  <div class="modal-actions" style="margin-top:20px;">
+                    ${s ? `<button type="button" class="link-btn" id="sims-edit-del" style="color:var(--terracotta);">Eliminar Sim</button>` : `<span></span>`}
+                    <button type="button" class="btn-primary" id="sims-edit-save">Guardar</button>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+
+          const traitsPicker = setupPicker('sims-f-traits', TRAITS, s ? (s.traits||[]) : [], true);
+          const skillsPicker = setupPicker('sims-f-skills', SKILLS, s ? (s.skills||[]) : [], true);
+
+          const close = () => { root.innerHTML = ''; };
+          document.getElementById('sims-edit-close').addEventListener('click', close);
+          document.getElementById('sims-edit-overlay').addEventListener('click', e => { if (e.target.id === 'sims-edit-overlay') close(); });
+          document.getElementById('sims-edit-cover').addEventListener('click', () => document.getElementById('sims-edit-file').click());
+          document.getElementById('sims-edit-file').addEventListener('change', e => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxW = 500; const scale = Math.min(1, maxW/img.width);
+                canvas.width = img.width*scale; canvas.height = img.height*scale;
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                imgData = canvas.toDataURL('image/jpeg', 0.85);
+                document.getElementById('sims-edit-cover').innerHTML = `<img class="loaded" src="${imgData}" alt="">`;
+              };
+              img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+          });
+          document.getElementById('sims-f-condition').addEventListener('change', e => {
+            const deathSelect = document.getElementById('sims-f-deathtype');
+            deathSelect.disabled = e.target.value !== 'muerto';
+            if (deathSelect.disabled) deathSelect.value = '';
+          });
+          document.getElementById('sims-edit-del')?.addEventListener('click', async () => {
+            if (!(await showConfirmModal(`¿Eliminar a ${fullName(s)}? También se eliminarán sus relaciones.`))) return;
+            RELATIONSHIPS = RELATIONSHIPS.filter(r => { const kill = r.simA===s.id||r.simB===s.id; if (kill) deleteRelationshipRemote(r.id); return !kill; });
+            SIMSDATA = SIMSDATA.filter(x => x.id !== s.id);
+            deleteSimRemote(s.id);
+            close();
+            renderTree();
+          });
+          document.getElementById('sims-edit-save').addEventListener('click', () => {
+            const firstName = document.getElementById('sims-f-first').value.trim();
+            if (!firstName) return;
+            const payload = {
+              firstName,
+              lastName: document.getElementById('sims-f-last').value.trim(),
+              gender: document.getElementById('sims-f-gender').value,
+              type: document.getElementById('sims-f-type').value,
+              condition: document.getElementById('sims-f-condition').value,
+              deathType: document.getElementById('sims-f-condition').value === 'muerto' ? (document.getElementById('sims-f-deathtype').value || null) : null,
+              world: document.getElementById('sims-f-world').value || null,
+              occultType: document.getElementById('sims-f-occult').value || null,
+              aspirations: document.getElementById('sims-f-aspiration').value ? [document.getElementById('sims-f-aspiration').value] : [],
+              career: document.getElementById('sims-f-career').value || null,
+              traits: traitsPicker.getSelected(),
+              skills: skillsPicker.getSelected(),
+              description: document.getElementById('sims-f-desc').value.trim(),
+              image: imgData
+            };
+            if (s){
+              Object.assign(s, payload);
+              saveSim(s);
+              close();
+              renderTree();
+              if (document.getElementById('sims-card-overlay')) openSimCard(s.id);
+            } else {
+              const ns = { id: simsUid(), familyId: currentFamilyId, createdAt: Date.now(), ...payload };
+              SIMSDATA.push(ns);
+              saveSim(ns);
+              close();
+              renderTree();
+            }
+          });
+        }
+
+        // ---------- Tarjeta de Sim (modal con 3 pestañas) ----------
+        let simCardTab = 'info';
+        function openSimCard(id){
+          simCardTab = 'info';
+          const root = document.getElementById('modal-root');
+          root.innerHTML = `
+            <div class="modal-overlay" id="sims-card-overlay">
+              <div class="modal-card" id="sims-card-inner" style="max-width:480px; margin-left:auto; margin-right:40px;">
+                <button class="modal-close" id="sims-card-close" type="button">${ICONS.close}</button>
+                <div class="fin-modal-body" id="sims-card-body"></div>
+              </div>
+            </div>`;
+          const close = () => { root.innerHTML = ''; renderTree(); };
+          document.getElementById('sims-card-close').addEventListener('click', close);
+          document.getElementById('sims-card-overlay').addEventListener('click', e => { if (e.target.id === 'sims-card-overlay') close(); });
+          renderSimCard(id);
+        }
+
+        function renderSimCard(id){
+          const s = findSim(id);
+          if (!s){ document.getElementById('sims-card-body').innerHTML = '<p>Este Sim ya no existe.</p>'; return; }
+          const body = document.getElementById('sims-card-body');
+          body.innerHTML = `
+            <div style="display:flex; gap:14px; align-items:center; margin-bottom:16px;">
+              <div class="sims-node-portrait" style="width:64px; height:64px; cursor:default;">
+                ${s.image ? `<img src="${s.image}" alt="">` : `<span>${initialsOf(s)}</span>`}
+              </div>
+              <div>
+                <h2 class="modal-title" style="margin:0;">${fullName(s)}</h2>
+                <p style="font-size:12px; color:var(--ink-soft); margin:2px 0 0;">${s.type==='mascota'?'Mascota':'Sim'} ${s.condition==='muerto' ? '· Fallecido/a' : ''}</p>
+              </div>
+            </div>
+            <div class="view-tabs" id="sims-card-tabs" style="margin-bottom:16px;">
+              <button type="button" class="view-tab ${simCardTab==='info'?'active':''}" data-simtab="info">Información</button>
+              <button type="button" class="view-tab ${simCardTab==='rel'?'active':''}" data-simtab="rel">Relaciones</button>
+              <button type="button" class="view-tab ${simCardTab==='mem'?'active':''}" data-simtab="mem">Recuerdos</button>
+            </div>
+            <div id="sims-card-tabcontent"></div>`;
+          body.querySelectorAll('[data-simtab]').forEach(btn => btn.addEventListener('click', () => { simCardTab = btn.dataset.simtab; renderSimCard(id); }));
+          if (simCardTab === 'info') renderSimInfoTab(s);
+          else if (simCardTab === 'rel') renderSimRelTab(s);
+          else renderSimMemTab(s);
+        }
+
+        function infoRow(label, value){
+          if (!value) return '';
+          return `<div class="sims-info-row"><span class="sims-info-label">${label}</span><span class="sims-info-value">${value}</span></div>`;
+        }
+        function renderSimInfoTab(s){
+          const el = document.getElementById('sims-card-tabcontent');
+          const genderLabel = { m:'Masculino', f:'Femenino', n:'No binario' }[s.gender] || '';
+          el.innerHTML = `
+            <div class="sims-info-list">
+              ${infoRow('Género', genderLabel)}
+              ${infoRow('Ubicación', s.world)}
+              ${infoRow('Condición', s.condition === 'muerto' ? 'Muerto/a' : 'Vivo/a')}
+              ${s.condition === 'muerto' ? infoRow('Tipo de muerte', s.deathType) : ''}
+              ${infoRow('Criatura sobrenatural', s.occultType)}
+              ${infoRow('Aspiración', (s.aspirations||[]).join(', '))}
+              ${infoRow('Profesión', s.career)}
+              ${s.traits && s.traits.length ? `<div class="sims-info-row"><span class="sims-info-label">Rasgos</span><span class="sims-info-value">${s.traits.map(t=>`<span class="sims-chip">${t}</span>`).join('')}</span></div>` : ''}
+              ${s.skills && s.skills.length ? `<div class="sims-info-row"><span class="sims-info-label">Habilidades</span><span class="sims-info-value">${s.skills.map(t=>`<span class="sims-chip">${t}</span>`).join('')}</span></div>` : ''}
+              ${s.description ? `<div class="sims-info-row" style="flex-direction:column; align-items:flex-start; gap:4px;"><span class="sims-info-label">Descripción</span><p style="margin:0; font-size:13px; color:var(--ink); line-height:1.5;">${s.description}</p></div>` : ''}
+            </div>
+            <button type="button" class="btn-ghost" id="sims-card-edit-btn" style="margin-top:18px;">${ICONS.edit} Editar Sim</button>`;
+          document.getElementById('sims-card-edit-btn').addEventListener('click', () => openSimEditModal(s.id));
+        }
+
+        function renderSimRelTab(s){
+          const el = document.getElementById('sims-card-tabcontent');
+          const grouped = { amor:[], familia:[], social:[], mascota:[] };
+          relsOf(s.id).forEach(r => {
+            const type = typeFor(r, s.id);
+            const def = REL_TYPES[type];
+            if (!def) return;
+            const other = findSim(otherSim(r, s.id));
+            if (!other) return;
+            grouped[def.category].push({ rel:r, type, other });
+          });
+          const derived = computeDerivedRelationships(s.id);
+
+          function sectionHtml(cat){
+            const items = grouped[cat];
+            if (!items.length) return '';
+            return `
+              <div class="sims-rel-section">
+                <div class="sims-rel-section-title">${REL_CATEGORY_LABELS[cat]}</div>
+                ${items.map(it => `
+                  <div class="sims-rel-row" data-view-sim="${it.other.id}">
+                    <div class="sims-node-portrait" style="width:34px; height:34px; cursor:pointer;">
+                      ${it.other.image ? `<img src="${it.other.image}" alt="">` : `<span style="font-size:11px;">${initialsOf(it.other)}</span>`}
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:13px; font-weight:600; color:var(--walnut-deep);">${fullName(it.other)}</div>
+                      <div style="font-size:11.5px; color:var(--ink-soft);">${relLabelFor(it.type)}</div>
+                    </div>
+                    <button type="button" class="postit-icon-btn" data-edit-rel="${it.rel.id}" title="Editar relación">${ICONS.edit}</button>
+                    <button type="button" class="postit-icon-btn" data-del-rel="${it.rel.id}" title="Eliminar relación">${ICONS.trash}</button>
+                  </div>
+                `).join('')}
+              </div>`;
+          }
+          el.innerHTML = `
+            ${sectionHtml('amor')}${sectionHtml('familia')}${sectionHtml('social')}${sectionHtml('mascota')}
+            ${!grouped.amor.length && !grouped.familia.length && !grouped.social.length && !grouped.mascota.length ? `<p class="memory-empty" style="padding:10px 0;">Todavía no hay relaciones registradas.</p>` : ''}
+            ${derived.length ? `
+              <div class="sims-rel-section">
+                <div class="sims-rel-section-title" style="color:var(--ink-soft);">Relaciones calculadas automáticamente</div>
+                ${derived.map(d => {
+                  const other = findSim(d.simId);
+                  if (!other) return '';
+                  return `<div class="sims-rel-row" data-view-sim="${other.id}">
+                    <div class="sims-node-portrait" style="width:34px; height:34px; cursor:pointer;">${other.image ? `<img src="${other.image}" alt="">` : `<span style="font-size:11px;">${initialsOf(other)}</span>`}</div>
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:13px; font-weight:600; color:var(--walnut-deep);">${fullName(other)}</div>
+                      <div style="font-size:11.5px; color:var(--ink-soft); font-style:italic;">${d.label}</div>
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>` : ''}
+            <button type="button" class="btn-ghost" id="sims-add-rel-btn" style="margin-top:14px;">${ICONS.plus} Añadir relación</button>`;
+          el.querySelectorAll('[data-view-sim]').forEach(row => row.addEventListener('click', e => {
+            if (e.target.closest('[data-del-rel]') || e.target.closest('[data-edit-rel]')) return;
+            openSimCard(row.dataset.viewSim);
+          }));
+          el.querySelectorAll('[data-edit-rel]').forEach(btn => btn.addEventListener('click', e => {
+            e.stopPropagation();
+            openAddRelationshipModal(s.id, btn.dataset.editRel);
+          }));
+          el.querySelectorAll('[data-del-rel]').forEach(btn => btn.addEventListener('click', async e => {
+            e.stopPropagation();
+            if (!(await showConfirmModal('¿Eliminar esta relación?'))) return;
+            RELATIONSHIPS = RELATIONSHIPS.filter(r => r.id !== btn.dataset.delRel);
+            deleteRelationshipRemote(btn.dataset.delRel);
+            renderSimCard(s.id);
+          }));
+          document.getElementById('sims-add-rel-btn').addEventListener('click', () => openAddRelationshipModal(s.id));
+        }
+
+        function renderSimMemTab(s){
+          const el = document.getElementById('sims-card-tabcontent');
+          const mems = MEMORIES.filter(m => (m.associatedSims||[]).includes(s.id));
+          el.innerHTML = `
+            <div class="sims-memories-grid">
+              ${mems.length ? mems.map(m => memoryCardHtml(m)).join('') : `<p class="memory-empty" style="padding:10px 0; grid-column:1/-1;">Todavía no hay recuerdos con este Sim.</p>`}
+            </div>
+            <button type="button" class="btn-ghost" id="sims-add-mem-btn" style="margin-top:14px;">${ICONS.plus} Añadir recuerdo</button>`;
+          el.querySelectorAll('[data-open-memory]').forEach(card => card.addEventListener('click', () => openMemoryDetailModal(card.dataset.openMemory)));
+          document.getElementById('sims-add-mem-btn').addEventListener('click', () => openMemoryEditModal(null, s.id));
+        }
+
+        // ---------- modal: añadir relación (Sim → tipo) ----------
+        function openAddRelationshipModal(simId, relId){
+          const s = findSim(simId);
+          const editingRel = relId ? RELATIONSHIPS.find(r => r.id === relId) : null;
+          const root = document.getElementById('modal-root');
+          const others = SIMSDATA.filter(x => x.id !== simId);
+          const otherLockedId = editingRel ? otherSim(editingRel, simId) : null;
+          const otherLocked = otherLockedId ? findSim(otherLockedId) : null;
+          const currentType = editingRel ? typeFor(editingRel, simId) : null;
+          root.innerHTML = `
+            <div class="modal-overlay" id="sims-rel-overlay">
+              <div class="modal-card" style="max-width:420px;">
+                <button class="modal-close" id="sims-rel-close" type="button">${ICONS.close}</button>
+                <div class="fin-modal-body">
+                  <h2 class="modal-title" style="margin-bottom:6px;">${editingRel ? 'Editar relación' : 'Añadir relación'}</h2>
+                  <p style="font-size:12px; color:var(--ink-soft); margin:0 0 16px;">Para ${fullName(s)}</p>
+                  <label class="form-field" style="margin-bottom:14px;">
+                    <span class="form-label">Sim relacionado</span>
+                    ${editingRel
+                      ? `<input type="text" value="${otherLocked ? fullName(otherLocked) : ''}" disabled>`
+                      : `<select id="sims-rel-other">
+                          <option value="">Selecciona un Sim…</option>
+                          ${others.map(o => `<option value="${o.id}">${fullName(o)} ${o.familyId !== s.familyId ? '(otra familia)' : ''}</option>`).join('')}
+                        </select>`}
+                  </label>
+                  <label class="form-field" style="margin-bottom:16px;">
+                    <span class="form-label">Tipo de relación</span>
+                    <select id="sims-rel-type">
+                      ${Object.entries(REL_CATEGORY_LABELS).map(([cat,label]) => `
+                        <optgroup label="${label}">
+                          ${relTypeOptionsFor(s.gender).filter(([,d]) => d.category===cat).map(([key,d]) => `<option value="${key}" ${currentType===key?'selected':''}>${d.label}</option>`).join('')}
+                        </optgroup>
+                      `).join('')}
+                    </select>
+                  </label>
+                  <div class="modal-actions">
+                    <span></span>
+                    <button type="button" class="btn-primary" id="sims-rel-save">${editingRel ? 'Guardar' : 'Añadir'}</button>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          const close = () => { root.innerHTML = ''; };
+          document.getElementById('sims-rel-close').addEventListener('click', close);
+          document.getElementById('sims-rel-overlay').addEventListener('click', e => { if (e.target.id === 'sims-rel-overlay') close(); });
+          document.getElementById('sims-rel-save').addEventListener('click', () => {
+            const type = document.getElementById('sims-rel-type').value;
+            if (!type) return;
+            if (editingRel){
+              // el tipo se guarda siempre desde la perspectiva de simA; si simId es simB, hay que convertir
+              if (editingRel.simA === simId) editingRel.type = type;
+              else editingRel.type = inverseRelType(type, s.gender);
+              saveRelationship(editingRel);
+            } else {
+              const otherId = document.getElementById('sims-rel-other').value;
+              if (!otherId) return;
+              addRelationshipBilateral(simId, otherId, type);
+            }
+            close();
+            openSimCard(simId);
+          });
+        }
+
+        // ---------- recuerdos ----------
+        function memoryCardHtml(m){
+          return `
+            <div class="sims-memory-card" data-open-memory="${m.id}">
+              <div class="sims-memory-cover">${m.images && m.images[0] ? `<img src="${m.images[0]}" alt="">` : `<span>${ICONS.camera}</span>`}</div>
+              <div class="sims-memory-title">${m.title || 'Sin título'}</div>
+            </div>`;
+        }
+
+        function openMemoryEditModal(id, presetSimId){
+          const m = id ? MEMORIES.find(x => x.id === id) : null;
+          const root = document.getElementById('modal-root');
+          let images = m ? [...(m.images||[])] : [];
+          const familySims = simsOf(currentFamilyId);
+          root.innerHTML = `
+            <div class="modal-overlay" id="sims-mem-overlay">
+              <div class="modal-card" style="max-width:480px;">
+                <button class="modal-close" id="sims-mem-close" type="button">${ICONS.close}</button>
+                <div class="fin-modal-body">
+                  <h2 class="modal-title" style="margin-bottom:16px;">${m ? 'Editar recuerdo' : 'Nuevo recuerdo'}</h2>
+                  <div class="sims-memory-images" id="sims-mem-images"></div>
+                  <input type="file" id="sims-mem-file" accept="image/*" multiple style="display:none;">
+                  <button type="button" class="btn-ghost" id="sims-mem-addimg-btn" style="margin-bottom:14px;">${ICONS.camera} Añadir imagen</button>
+                  <label class="form-field" style="margin-bottom:12px;">
+                    <span class="form-label">Título</span>
+                    <input type="text" id="sims-mem-title" value="${m && m.title ? m.title.replace(/"/g,'&quot;') : ''}" placeholder="Ej: Primera cita en el bistró">
+                  </label>
+                  <label class="form-field" style="margin-bottom:14px;">
+                    <span class="form-label">Descripción (opcional)</span>
+                    <input type="text" id="sims-mem-desc" value="${m && m.description ? m.description.replace(/"/g,'&quot;') : ''}" placeholder="Opcional">
+                  </label>
+                  <div class="form-field span-2" style="margin-bottom:16px;">
+                    <span class="form-label">Sims que aparecen</span>
+                    <div id="sims-mem-sims"></div>
+                  </div>
+                  <div class="modal-actions">
+                    ${m ? `<button type="button" class="link-btn" id="sims-mem-del" style="color:var(--terracotta);">Eliminar recuerdo</button>` : `<span></span>`}
+                    <button type="button" class="btn-primary" id="sims-mem-save">Guardar</button>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          const simNames = familySims.map(fs => fullName(fs));
+          const initialSimNames = (m ? m.associatedSims : (presetSimId ? [presetSimId] : [])).map(id2 => { const fs = findSim(id2); return fs ? fullName(fs) : null; }).filter(Boolean);
+          const simsPicker = setupPicker('sims-mem-sims', simNames, initialSimNames, true);
+
+          function renderImages(){
+            document.getElementById('sims-mem-images').innerHTML = images.map((img,i) => `
+              <div class="sims-memory-img-thumb"><img src="${img}" alt=""><button type="button" data-rmimg="${i}">${ICONS.close}</button></div>
+            `).join('');
+            document.querySelectorAll('[data-rmimg]').forEach(btn => btn.addEventListener('click', () => { images.splice(Number(btn.dataset.rmimg),1); renderImages(); }));
+          }
+          renderImages();
+
+          const close = () => { root.innerHTML = ''; };
+          document.getElementById('sims-mem-close').addEventListener('click', close);
+          document.getElementById('sims-mem-overlay').addEventListener('click', e => { if (e.target.id === 'sims-mem-overlay') close(); });
+          document.getElementById('sims-mem-addimg-btn').addEventListener('click', () => document.getElementById('sims-mem-file').click());
+          document.getElementById('sims-mem-file').addEventListener('change', e => {
+            [...e.target.files].forEach(file => {
+              const reader = new FileReader();
+              reader.onload = ev => {
+                const img = new Image();
+                img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  const maxW = 900; const scale = Math.min(1, maxW/img.width);
+                  canvas.width = img.width*scale; canvas.height = img.height*scale;
+                  canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                  images.push(canvas.toDataURL('image/jpeg', 0.85));
+                  renderImages();
+                };
+                img.src = ev.target.result;
+              };
+              reader.readAsDataURL(file);
+            });
+          });
+          document.getElementById('sims-mem-del')?.addEventListener('click', async () => {
+            if (!(await showConfirmModal('¿Eliminar este recuerdo?'))) return;
+            MEMORIES = MEMORIES.filter(x => x.id !== m.id);
+            deleteMemoryRemote(m.id);
+            close();
+            renderSimCard(presetSimId || (m.associatedSims && m.associatedSims[0]));
+          });
+          document.getElementById('sims-mem-save').addEventListener('click', () => {
+            const title = document.getElementById('sims-mem-title').value.trim();
+            const selectedNames = simsPicker.getSelected();
+            const associatedSims = selectedNames.map(name => { const fs = familySims.find(x => fullName(x) === name); return fs ? fs.id : null; }).filter(Boolean);
+            const payload = { title, description: document.getElementById('sims-mem-desc').value.trim(), images, associatedSims, familyId: currentFamilyId };
+            if (m){
+              Object.assign(m, payload);
+              saveMemory(m);
+            } else {
+              const nm = { id: simsUid(), createdAt: Date.now(), ...payload };
+              MEMORIES.push(nm);
+              saveMemory(nm);
+            }
+            close();
+            if (presetSimId) renderSimCard(presetSimId);
+          });
+        }
+
+        function openMemoryDetailModal(id){
+          const m = MEMORIES.find(x => x.id === id);
+          if (!m) return;
+          const root = document.getElementById('modal-root');
+          root.innerHTML = `
+            <div class="modal-overlay" id="sims-memdet-overlay">
+              <div class="modal-card" style="max-width:520px;">
+                <button class="modal-close" id="sims-memdet-close" type="button">${ICONS.close}</button>
+                <div class="fin-modal-body">
+                  ${m.images && m.images.length ? `<div class="sims-memory-detail-images">${m.images.map(img => `<img src="${img}" alt="">`).join('')}</div>` : ''}
+                  <h2 class="modal-title" style="margin:14px 0 4px;">${m.title || 'Sin título'}</h2>
+                  ${m.description ? `<p style="font-size:13px; color:var(--ink); line-height:1.5; margin:0 0 14px;">${m.description}</p>` : ''}
+                  <div style="font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">Sims en este recuerdo</div>
+                  <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    ${(m.associatedSims||[]).map(sid => {
+                      const fs = findSim(sid); if (!fs) return '';
+                      return `<div class="sims-rel-row" data-view-sim="${fs.id}" style="background:var(--linen); border-radius:20px; padding:5px 12px 5px 5px; width:auto;">
+                        <div class="sims-node-portrait" style="width:26px; height:26px; cursor:pointer;">${fs.image ? `<img src="${fs.image}" alt="">` : `<span style="font-size:10px;">${initialsOf(fs)}</span>`}</div>
+                        <span style="font-size:12.5px; font-weight:600; color:var(--walnut-deep);">${fullName(fs)}</span>
+                      </div>`;
+                    }).join('')}
+                  </div>
+                  <button type="button" class="btn-ghost" id="sims-memdet-edit" style="margin-top:18px;">${ICONS.edit} Editar recuerdo</button>
+                </div>
+              </div>
+            </div>`;
+          const close = () => { root.innerHTML = ''; };
+          document.getElementById('sims-memdet-close').addEventListener('click', close);
+          document.getElementById('sims-memdet-overlay').addEventListener('click', e => { if (e.target.id === 'sims-memdet-overlay') close(); });
+          document.getElementById('sims-memdet-edit').addEventListener('click', () => openMemoryEditModal(m.id, m.associatedSims && m.associatedSims[0]));
+          document.querySelectorAll('[data-view-sim]').forEach(row => row.addEventListener('click', () => openSimCard(row.dataset.viewSim)));
+        }
+
+        // ---------- galería de recuerdos de la familia ----------
+        function openFamilyMemoriesGallery(){
+          const mems = MEMORIES.filter(m => m.familyId === currentFamilyId);
+          const root = document.getElementById('modal-root');
+          root.innerHTML = `
+            <div class="modal-overlay" id="sims-gallery-overlay">
+              <div class="modal-card" style="max-width:640px;">
+                <button class="modal-close" id="sims-gallery-close" type="button">${ICONS.close}</button>
+                <div class="fin-modal-body">
+                  <h2 class="modal-title" style="margin-bottom:16px;">Recuerdos de la familia</h2>
+                  <div class="sims-memories-grid">
+                    ${mems.length ? mems.map(m => memoryCardHtml(m)).join('') : `<p class="memory-empty" style="padding:10px 0; grid-column:1/-1;">Todavía no hay recuerdos guardados en esta familia.</p>`}
+                  </div>
+                  <button type="button" class="btn-ghost" id="sims-gallery-add" style="margin-top:16px;">${ICONS.plus} Añadir recuerdo</button>
+                </div>
+              </div>
+            </div>`;
+          const close = () => { root.innerHTML = ''; };
+          document.getElementById('sims-gallery-close').addEventListener('click', close);
+          document.getElementById('sims-gallery-overlay').addEventListener('click', e => { if (e.target.id === 'sims-gallery-overlay') close(); });
+          document.querySelectorAll('[data-open-memory]').forEach(card => card.addEventListener('click', () => openMemoryDetailModal(card.dataset.openMemory)));
+          document.getElementById('sims-gallery-add').addEventListener('click', () => openMemoryEditModal(null, null));
+        }
+
+        document.getElementById('sims-family-add-btn').addEventListener('click', () => openFamilyFormModal(null));
+        document.getElementById('sims-back-btn').addEventListener('click', () => { switchView('families'); renderFamiliesView(); });
+        document.getElementById('sims-sim-add-btn').addEventListener('click', () => openSimEditModal(null));
+        document.getElementById('sims-memories-btn').addEventListener('click', () => openFamilyMemoriesGallery());
+        window.addEventListener('resize', () => { if (!document.getElementById('sims-tree-view').hidden) drawTreeLines(simsOf(currentFamilyId)); });
+
+        switchView('families');
+        renderFamiliesView();
+        loadAll().then(() => { renderFamiliesView(); if (currentFamilyId) renderTree(); });
+
+  })();
+
+</script>
+</body>
+</html>
